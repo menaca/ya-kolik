@@ -60,22 +60,23 @@ export function MatchCenter({ initial }: { initial: MatchPayload }) {
   return (
     <article>
       <p className="kicker">{match.competition_name || "Maç"}</p>
-      <div className="match-row">
-        <MinuteBadge match={match} serverNow={data.server_now} />
-        <span className="sides">
-          <span className="side">
-            <b>
-              <Link href={`/takim/${match.home.slug}`}>{match.home.name}</Link>
-            </b>
-            <span className="num">{match.home_score}</span>
+      <div className="board scoreboard">
+        <div className="match-row">
+          <Link href={`/takim/${match.home.slug}`} className="team home">
+            {match.home.name}
+          </Link>
+          <span className="mid">
+            <span className="score num">
+              {match.home_score}
+              <span>-</span>
+              {match.away_score}
+            </span>
+            <MinuteBadge match={match} serverNow={data.server_now} />
           </span>
-          <span className="side">
-            <b>
-              <Link href={`/takim/${match.away.slug}`}>{match.away.name}</Link>
-            </b>
-            <span className="num">{match.away_score}</span>
-          </span>
-        </span>
+          <Link href={`/takim/${match.away.slug}`} className="team away">
+            {match.away.name}
+          </Link>
+        </div>
       </div>
       <p className="meta">
         {formatKickoff(match.kickoff_at)}

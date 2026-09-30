@@ -1,8 +1,7 @@
 import { MatchList } from "@/components/match-list";
 import { StandingsTable } from "@/components/standings-table";
 import { getHome } from "@/lib/data";
-import { formatKickoff, isOnClock } from "@/lib/format";
-import Link from "next/link";
+import { isOnClock } from "@/lib/format";
 import { Suspense } from "react";
 
 export default function HomePage() {
@@ -37,13 +36,10 @@ async function HomeBody() {
       ) : null}
 
       {data.featured?.next ? (
-        <Link href={`/mac/${data.featured.next.id}`} className="featured" prefetch>
-          <p className="kicker">{data.featured.team.short_name}</p>
-          <p>
-            {data.featured.next.home.short_name} – {data.featured.next.away.short_name}
-          </p>
-          <p className="meta">{formatKickoff(data.featured.next.kickoff_at)}</p>
-        </Link>
+        <section className="section">
+          <h2>{data.featured.team.short_name}</h2>
+          <MatchList matches={[data.featured.next]} serverNow={data.server_now} />
+        </section>
       ) : null}
 
       {live.length > 0 ? (

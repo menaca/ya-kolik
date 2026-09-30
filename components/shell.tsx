@@ -24,12 +24,56 @@ function active(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function TabIcon({ href }: { href: string }) {
+  const common = {
+    width: 22,
+    height: 22,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+  if (href === "/canli") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 8v5l3 2" />
+      </svg>
+    );
+  }
+  if (href === "/fikstur") {
+    return (
+      <svg {...common}>
+        <rect x="4" y="5" width="16" height="15" rx="2" />
+        <path d="M8 3v4M16 3v4M4 10h16" />
+      </svg>
+    );
+  }
+  if (href === "/puan-durumu") {
+    return (
+      <svg {...common}>
+        <path d="M5 19V10M12 19V5M19 19v-7" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
+    </svg>
+  );
+}
+
 function TabLinks({
   className,
   pathname,
+  icons,
 }: {
   className: string;
   pathname?: string;
+  icons?: boolean;
 }) {
   const router = useRouter();
   return (
@@ -42,7 +86,8 @@ function TabLinks({
           data-active={pathname ? active(pathname, tab.href) : false}
           onTouchStart={() => router.prefetch(tab.href)}
         >
-          {tab.label}
+          {icons ? <TabIcon href={tab.href} /> : null}
+          <span>{tab.label}</span>
         </Link>
       ))}
     </nav>
@@ -63,7 +108,9 @@ function ActiveTabs({ className }: { className: string }) {
     for (const tab of TABS) router.prefetch(tab.href);
   }, [router]);
 
-  return <TabLinks className={className} pathname={current ?? undefined} />;
+  return (
+    <TabLinks className={className} pathname={current ?? undefined} icons={className === "nav-mobile"} />
+  );
 }
 
 function ThemeTools() {
@@ -124,8 +171,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <div className="shell">
       <header className="topbar">
         <Link href="/" className="brand" prefetch>
+          <span className="mark">YK</span>
           <strong>Ya-Kolik</strong>
-          <span>Lig</span>
         </Link>
         <Suspense fallback={<TabLinks className="nav-desktop" />}>
           <ActiveTabs className="nav-desktop" />
@@ -133,7 +180,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <ThemeTools />
       </header>
       <main className="page">{children}</main>
-      <Suspense fallback={<TabLinks className="nav-mobile" />}>
+      <Suspense fallback={<TabLinks className="nav-mobile" icons />}>
         <ActiveTabs className="nav-mobile" />
       </Suspense>
     </div>

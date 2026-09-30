@@ -3,7 +3,7 @@ import type { StandingRow } from "@/lib/types";
 
 export function StandingsTable({ rows }: { rows: StandingRow[] }) {
   return (
-    <div className="table-wrap">
+    <div className="table-wrap board">
       <table className="grid">
         <thead>
           <tr>

@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow_Condensed, IBM_Plex_Sans } from "next/font/google";
+import { Barlow_Condensed, Inter } from "next/font/google";
 import "./globals.css";
 
-const sans = IBM_Plex_Sans({
+const sans = Inter({
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
   variable: "--font-sans",
   display: "swap",
 });
@@ -25,7 +25,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f6f3ec",
+  themeColor: "#e8eaee",
 };
 
 const themeBoot = `try{var d=document.documentElement;var t=localStorage.getItem("yk-theme");var a=localStorage.getItem("yk-accent");var accents=["mor","bordo","lacivert","orman","kizil","altin"];d.dataset.theme=t==="dark"?"dark":"light";d.dataset.accent=accents.indexOf(a)>=0?a:"mor";}catch(e){}`;
