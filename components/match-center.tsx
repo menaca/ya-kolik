@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MinuteBadge } from "@/components/minute-badge";
 import { Pitch } from "@/components/pitch";
+import { promoteDueMatches } from "@/lib/actions";
 import { eventMinute, eventText, formatKickoff } from "@/lib/format";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { MatchPayload } from "@/lib/types";
@@ -18,6 +19,7 @@ export function MatchCenter({ initial }: { initial: MatchPayload }) {
     if (!supabase) return;
     let timer = 0;
     const pull = () => {
+      void promoteDueMatches();
       supabase.rpc("get_match", { mid: initial.match.id }).then(({ data: next }) => {
         if (next) setData(next as MatchPayload);
       });

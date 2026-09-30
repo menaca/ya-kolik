@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/kickoff",
-      "schedule": "* * * * *"
+      "schedule": "0 4 * * *"
     }
   ]
 }
