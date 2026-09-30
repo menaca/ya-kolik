@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MatchList } from "@/components/match-list";
-import { promoteDueMatches } from "@/lib/actions";
+import { isOnClock } from "@/lib/format";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { MatchCard } from "@/lib/types";
 
@@ -21,12 +21,11 @@ export function LiveBoard({
     if (!supabase) return;
     let timer = 0;
     const pull = () => {
-      void promoteDueMatches();
       supabase.rpc("get_fixtures").then(({ data }) => {
         if (!data) return;
         const payload = data as { server_now: number; matches: MatchCard[] };
-        setMatches(payload.matches.filter((match) => match.status === "live" || match.status === "ht"));
         setNow(payload.server_now);
+        setMatches(payload.matches.filter((match) => isOnClock(match, payload.server_now)));
       });
     };
     const channel = supabase

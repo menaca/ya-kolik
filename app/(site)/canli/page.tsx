@@ -1,5 +1,6 @@
 import { LiveBoard } from "@/components/live-board";
 import { getFixtures } from "@/lib/data";
+import { isOnClock } from "@/lib/format";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -15,7 +16,7 @@ export default function LivePage() {
 
 async function LiveBody() {
   const data = await getFixtures();
-  const live = data.matches.filter((match) => match.status === "live" || match.status === "ht");
+  const live = data.matches.filter((match) => isOnClock(match, data.server_now));
   return (
     <>
       <h2>Canlı skor</h2>

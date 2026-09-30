@@ -4,7 +4,6 @@ import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { istanbulToIso, minuteParts, slugify } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export type FormState = { message: string } | null;
 
@@ -54,12 +53,6 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     return { message: "Bu hesap yönetici değil." };
   }
   redirect("/panel");
-}
-
-export async function promoteDueMatches() {
-  const admin = createAdminClient();
-  if (!admin) return;
-  await admin.rpc("sync_match_clocks");
 }
 
 export async function logout() {

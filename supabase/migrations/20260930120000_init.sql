@@ -191,41 +191,6 @@ create trigger match_events_score
 after insert or update or delete on public.match_events
 for each row execute function public.apply_event_score();
 
-create or replace function public.sync_match_clocks()
-returns void
-language plpgsql
-security invoker
-set search_path = public
-as $$
-begin
-  update public.matches
-  set status = 'live',
-      clock_running = true,
-      clock_started_at = kickoff_at,
-      clock_accumulated_seconds = 0,
-      current_half = 1
-  where status = 'scheduled'
-    and auto_start
-    and kickoff_at <= now();
-
-  update public.matches
-  set status = 'ht',
-      clock_running = false,
-      clock_accumulated_seconds = current_half * half_minutes * 60,
-      clock_started_at = null
-  where status = 'live'
-    and clock_running
-    and current_half < half_count
-    and clock_started_at is not null
-    and clock_accumulated_seconds
-        + extract(epoch from (now() - clock_started_at))
-        >= current_half * half_minutes * 60;
-end;
-$$;
-
-revoke all on function public.sync_match_clocks() from public, anon, authenticated;
-grant execute on function public.sync_match_clocks() to service_role;
-
 create or replace view public.match_cards
 with (security_invoker = true) as
 select
@@ -373,6 +338,12 @@ as $$
       select jsonb_agg(to_jsonb(mc) order by mc.kickoff_at)
       from public.match_cards mc
       where mc.status in ('live', 'ht')
+         or (
+           mc.status = 'scheduled'
+           and mc.auto_start
+           and mc.kickoff_at <= now()
+           and now() < mc.kickoff_at + ((mc.half_count * mc.half_minutes + 20) * interval '1 minute')
+         )
     ), '[]'::jsonb),
     'today', coalesce((
       select jsonb_agg(to_jsonb(mc) order by mc.kickoff_at)
@@ -380,6 +351,12 @@ as $$
       where (mc.kickoff_at at time zone 'Europe/Istanbul')::date
             = (now() at time zone 'Europe/Istanbul')::date
         and mc.status not in ('live', 'ht')
+        and not (
+          mc.status = 'scheduled'
+          and mc.auto_start
+          and mc.kickoff_at <= now()
+          and now() < mc.kickoff_at + ((mc.half_count * mc.half_minutes + 20) * interval '1 minute')
+        )
     ), '[]'::jsonb),
     'recent', coalesce((
       select jsonb_agg(to_jsonb(mc) order by mc.kickoff_at desc)

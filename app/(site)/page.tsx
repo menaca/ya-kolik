@@ -1,7 +1,7 @@
 import { MatchList } from "@/components/match-list";
 import { StandingsTable } from "@/components/standings-table";
 import { getHome } from "@/lib/data";
-import { formatKickoff } from "@/lib/format";
+import { formatKickoff, isOnClock } from "@/lib/format";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -15,6 +15,12 @@ export default function HomePage() {
 
 async function HomeBody() {
   const data = await getHome();
+  const liveIds = new Set(data.live.map((match) => match.id));
+  const live = [
+    ...data.live,
+    ...data.today.filter((match) => !liveIds.has(match.id) && isOnClock(match, data.server_now)),
+  ];
+  const today = data.today.filter((match) => !isOnClock(match, data.server_now));
   const bare =
     !data.competition &&
     data.live.length === 0 &&
@@ -40,21 +46,21 @@ async function HomeBody() {
         </Link>
       ) : null}
 
-      {data.live.length > 0 ? (
+      {live.length > 0 ? (
         <section className="section">
           <h2>Canlı</h2>
-          <MatchList matches={data.live} serverNow={data.server_now} />
+          <MatchList matches={live} serverNow={data.server_now} />
         </section>
       ) : null}
 
       <section className="section">
         <h2>Bugün</h2>
-        {data.today.length === 0 ? (
+        {today.length === 0 ? (
           <p className="empty">
             <strong>Bugün maç yok.</strong>
           </p>
         ) : (
-          <MatchList matches={data.today} serverNow={data.server_now} />
+          <MatchList matches={today} serverNow={data.server_now} />
         )}
       </section>
 

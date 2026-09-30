@@ -1,4 +1,4 @@
-import type { MatchCard, MatchStatus } from "@/lib/types";
+import type { MatchCard } from "@/lib/types";
 
 const kickoffFormat = new Intl.DateTimeFormat("tr-TR", {
   timeZone: "Europe/Istanbul",
@@ -127,34 +127,29 @@ type Clock = Pick<
   | "half_count"
 >;
 
-export function presentMatch(match: Clock, now: number | null) {
-  let status: MatchStatus = match.status;
+export function isOnClock(match: Clock, now: number) {
+  if (match.status === "live" || match.status === "ht") return true;
+  if (match.status !== "scheduled" || !match.auto_start || !now) return false;
   const kick = Date.parse(match.kickoff_at);
-  if (now != null && status === "scheduled" && match.auto_start && kick <= now) {
-    status = "live";
-  }
+  const end = kick + (match.half_count * match.half_minutes + 20) * 60_000;
+  return kick <= now && now < end;
+}
 
-  if (status === "ft") return { label: "MS", live: false, status };
-  if (status === "ht") return { label: "DA", live: false, status };
-  if (status === "scheduled") {
+export function presentMatch(match: Clock, now: number | null) {
+  if (match.status === "ft") return { label: "MS", live: false, status: "ft" as const };
+  if (match.status === "ht") return { label: "DA", live: false, status: "ht" as const };
+
+  const kick = Date.parse(match.kickoff_at);
+  if (now == null || (match.status === "scheduled" && kick > now)) {
     return { label: formatTime(match.kickoff_at), live: false, status: "scheduled" as const };
   }
 
-  let elapsed = match.clock_accumulated_seconds;
-  if (now != null && match.status === "scheduled" && match.auto_start) {
-    elapsed = Math.max(0, Math.floor((now - kick) / 1000));
-  } else if (now != null && match.clock_running && match.clock_started_at) {
-    elapsed += Math.max(0, Math.floor((now - Date.parse(match.clock_started_at)) / 1000));
+  const elapsed = elapsedSeconds(match, now);
+  const raw = Math.max(1, Math.floor(elapsed / 60) + 1);
+  if (match.clock_running) {
+    const cap = match.current_half * match.half_minutes;
+    if (raw > cap) return { label: `${cap}+${raw - cap}`, live: true, status: "live" as const };
   }
-
-  const boundary = match.current_half * match.half_minutes * 60;
-  if (elapsed >= boundary && match.current_half < match.half_count) {
-    return { label: "DA", live: false, status: "ht" as const };
-  }
-
-  const raw = Math.floor(elapsed / 60) + 1;
-  const cap = match.current_half * match.half_minutes;
-  if (raw > cap) return { label: `${cap}+${raw - cap}`, live: true, status: "live" as const };
   return { label: `${raw}'`, live: true, status: "live" as const };
 }
 
@@ -168,16 +163,29 @@ export function resultFor(match: MatchCard, teamId: string) {
 }
 
 export function elapsedSeconds(match: Clock, now = Date.now()) {
-  let elapsed = match.clock_accumulated_seconds;
   if (match.clock_running && match.clock_started_at) {
-    elapsed += Math.max(0, Math.floor((now - Date.parse(match.clock_started_at)) / 1000));
+    return (
+      match.clock_accumulated_seconds +
+      Math.max(0, Math.floor((now - Date.parse(match.clock_started_at)) / 1000))
+    );
   }
-  return elapsed;
+  if (match.auto_start && match.status !== "ft" && match.status !== "ht") {
+    const kick = Date.parse(match.kickoff_at);
+    if (kick <= now) return Math.max(0, Math.floor((now - kick) / 1000));
+  }
+  return match.clock_accumulated_seconds;
 }
 
 export function minuteParts(match: Clock, now = Date.now()) {
   const elapsed = elapsedSeconds(match, now);
-  const raw = Math.floor(elapsed / 60) + 1;
+  const raw = Math.max(1, Math.floor(elapsed / 60) + 1);
+  if (!match.clock_running && match.auto_start) {
+    return {
+      minute: raw,
+      extra: null as number | null,
+      half: raw > match.half_minutes ? Math.min(match.half_count, 2) : 1,
+    };
+  }
   const cap = match.current_half * match.half_minutes;
   if (raw > cap) return { minute: cap, extra: raw - cap, half: match.current_half };
   return { minute: raw, extra: null as number | null, half: match.current_half };
